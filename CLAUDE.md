@@ -44,8 +44,8 @@ Multi-agent smart shopping system using Google's ADK (Agent Development Kit) fra
 ## Technical Stack
 
 - **Framework**: Google ADK for multi-agent orchestration
-- **Backend**: API server handling chat interface integration
-- **Frontend**: Web-based chat interface (framework TBD)
+- **Frontend**: Streamlit (Python-native chat interface with built-in components)
+- **Language**: Python (entire stack)
 
 ## Development Notes
 

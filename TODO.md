@@ -42,10 +42,14 @@ Building a multi-agent system using Google's ADK framework with:
 - [ ] Set up inter-agent communication and coordination
 
 ### Phase 3: Interface & Integration
-- [ ] Create the chat interface frontend (web-based)
-- [ ] Implement backend API for chat interface integration
+- [ ] Create the chat interface frontend using Streamlit
+  - [ ] Install Streamlit and set up basic app structure
+  - [ ] Implement chat UI with st.chat_message and st.chat_input
+  - [ ] Connect frontend to orchestrator agent
+  - [ ] Add session state management for conversation history
 - [ ] Add logging and monitoring for agent interactions
 - [ ] Implement error handling and fallback mechanisms
+- [ ] Add loading states and progress indicators in UI
 
 ### Phase 4: Testing & Deployment
 - [ ] Test individual agents independently
@@ -62,10 +66,11 @@ Building a multi-agent system using Google's ADK framework with:
 ## Questions Answered
 - ✓ What are the specific roles/capabilities for the 3 subagents?
   - Product Normalizer, Optimizer, and Evaluator (see Architecture Plan)
+- ✓ What frontend framework preference for the chat interface?
+  - Streamlit (Python-native, fast setup, built-in chat components)
 
 ## Open Questions
 - What type of tasks/queries should the system handle? (e.g., "Find cheapest place to buy milk and eggs")
-- What frontend framework preference for the chat interface? (React, Vue, Svelte, etc.)
 - Local development vs cloud deployment preference?
 - Which stores/retailers should be supported initially?
 - Will store data come from APIs, web scraping, or manual entry?
