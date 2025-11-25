@@ -1,6 +1,6 @@
 """Orchestrator Agent - Main coordinator for routing requests and managing subagent interactions"""
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 class OrchestratorAgent:
@@ -9,11 +9,17 @@ class OrchestratorAgent:
     and aggregates results for final recommendation.
     """
 
-    def __init__(self):
-        """Initialize the orchestrator with references to subagents"""
+    def __init__(self, memory_service: Optional[Any] = None):
+        """
+        Initialize the orchestrator with references to subagents and memory service.
+
+        Args:
+            memory_service: Optional MemoryService instance for long-term memory
+        """
         self.product_intelligence = None  # ProductIntelligenceAgent
         self.location = None  # LocationAgent
         self.synthesis = None  # SynthesisAgent
+        self.memory_service = memory_service  # MemoryService for storing/retrieving past interactions
 
     def process_request(self, user_query: str, user_location: str = None) -> Dict[str, Any]:
         """
@@ -50,3 +56,63 @@ class OrchestratorAgent:
         self.product_intelligence = product_intelligence
         self.location = location
         self.synthesis = synthesis
+
+    def save_to_memory(
+        self,
+        user_query: str,
+        response: str,
+        user_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        Helper method to save interaction to long-term memory.
+
+        Args:
+            user_query: The user's question or request
+            response: The assistant's response
+            user_id: Optional user identifier
+            metadata: Optional metadata (location, tags, etc.)
+
+        Returns:
+            True if successfully saved, False otherwise
+        """
+        if not self.memory_service:
+            return False
+
+        session_data = {
+            "user_query": user_query,
+            "assistant_response": response,
+            "agent_type": "orchestrator"
+        }
+
+        return self.memory_service.add_session_to_memory(
+            session_data=session_data,
+            user_id=user_id,
+            metadata=metadata
+        )
+
+    def retrieve_relevant_memories(
+        self,
+        query: Optional[str] = None,
+        user_id: Optional[str] = None,
+        limit: int = 5
+    ) -> list:
+        """
+        Helper method to retrieve relevant past interactions from memory.
+
+        Args:
+            query: Optional search query
+            user_id: Optional user filter
+            limit: Maximum number of memories to retrieve
+
+        Returns:
+            List of relevant memory entries
+        """
+        if not self.memory_service:
+            return []
+
+        return self.memory_service.search_memory(
+            query=query,
+            user_id=user_id,
+            limit=limit
+        )

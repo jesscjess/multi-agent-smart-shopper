@@ -7,6 +7,7 @@ from agents import (
     LocationAgent,
     SynthesisAgent,
 )
+from memory_service import MemoryService
 
 # Page configuration
 st.set_page_config(
@@ -27,18 +28,22 @@ if "user_profile" not in st.session_state:
         "setup_complete": False
     }
 
-# Initialize agents (singleton pattern)
+# Initialize agents and memory service (singleton pattern)
 if "orchestrator" not in st.session_state:
+    # Step 1: Initialize MemoryService
+    memory_service = MemoryService(storage_path="data/ecoscan_memory.json")
+
     # Create specialized agents
     product_intelligence = ProductIntelligenceAgent()  # Material analysis
     location = LocationAgent()  # Local recycling rules
     synthesis = SynthesisAgent()  # Recommendations and tips
 
-    # Create and initialize orchestrator
-    orchestrator = OrchestratorAgent()
+    # Create and initialize orchestrator with memory service
+    orchestrator = OrchestratorAgent(memory_service=memory_service)
     orchestrator.initialize_agents(product_intelligence, location, synthesis)
 
     st.session_state.orchestrator = orchestrator
+    st.session_state.memory_service = memory_service
 
 # App header
 st.title("♻️ EcoScan")
@@ -168,6 +173,30 @@ The EcoScan multi-agent system will:
 
         # Add assistant message to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
+
+        # Step 2: Ingest - Add session to memory
+        session_data = {
+            "user_query": prompt,
+            "assistant_response": response,
+            "timestamp": st.session_state.messages[-1].get("timestamp") if "timestamp" in st.session_state.messages[-1] else None,
+            "conversation_context": {
+                "message_count": len(st.session_state.messages),
+                "session_id": id(st.session_state)  # Unique session identifier
+            }
+        }
+
+        metadata = {
+            "location": st.session_state.user_profile.get("location"),
+            "zip_code": st.session_state.user_profile.get("zip_code"),
+            "query_type": "recyclability_check"
+        }
+
+        # Store in long-term memory
+        st.session_state.memory_service.add_session_to_memory(
+            session_data=session_data,
+            user_id=st.session_state.user_profile.get("location"),  # Using location as user_id for now
+            metadata=metadata
+        )
 
 else:
     # Show welcome message if profile not set up

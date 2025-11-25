@@ -46,3 +46,7 @@ Thumbs.db
 
 # Claude Code
 .claude/
+
+# Data storage (user data and memory)
+data/
+*.json
