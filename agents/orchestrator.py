@@ -37,16 +37,8 @@ class OrchestratorAgent:
         if request_type in ["location_setup", "location_update"]:
             return self._handle_location_setup(user_location, is_update=(request_type == "location_update"))
 
-        # TODO: Handle recyclability check requests
-        # 1. Parse user query and extract item description (Product Intelligence Agent)
-        # 2. Send material data to Location Agent with user location
-        # 3. Send combined data to Synthesis Agent for final recommendation
-        # 4. Aggregate and return results
-
-        return {
-            "status": "not_implemented",
-            "message": "Recyclability check not yet implemented. Location setup is working!"
-        }
+        # Handle recyclability check requests
+        return self._handle_recyclability_check(user_query, user_location)
 
     def _handle_location_setup(self, user_location: str, is_update: bool = False) -> Dict[str, Any]:
         """
@@ -168,6 +160,116 @@ class OrchestratorAgent:
         response += f"\n💡 Now you can ask me about specific items to see if they're recyclable in your area!"
 
         return response
+
+    def _handle_recyclability_check(self, user_query: str, user_location: str) -> Dict[str, Any]:
+        """
+        Handle recyclability check by coordinating Product Intelligence, Location (via memory), and Synthesis agents.
+
+        Args:
+            user_query: User's question about an item
+            user_location: User's location
+
+        Returns:
+            Dict containing recyclability verdict and response
+        """
+        if not user_query:
+            return {
+                "status": "error",
+                "message": "Please provide an item to check for recyclability."
+            }
+
+        if not user_location:
+            return {
+                "status": "error",
+                "message": "Location not set. Please set up your location first."
+            }
+
+        try:
+            # Step 1: Call Product Intelligence Agent to identify material
+            # Using the existing analyze_item() method
+            if not self.product_intelligence:
+                return {
+                    "status": "error",
+                    "message": "Product Intelligence agent not initialized"
+                }
+
+            material_info = self.product_intelligence.analyze_item(item_description=user_query)
+
+            # Check if implementation is complete
+            if material_info.get("status") == "not_implemented":
+                return {
+                    "status": "not_implemented",
+                    "message": "Product Intelligence Agent not yet implemented. The agent needs to analyze items and identify materials."
+                }
+
+            # Step 2: Retrieve location data from memory
+            if not self.memory_service:
+                return {
+                    "status": "error",
+                    "message": "Memory service not available. Cannot retrieve location data."
+                }
+
+            # Search memory for location data
+            location_memories = self.memory_service.search_memory(
+                user_id=user_location,
+                filters={"agent": "location_agent"},
+                limit=1
+            )
+
+            if not location_memories:
+                # Fallback: try to get location data directly from Location Agent
+                if self.location:
+                    location_data = self.location.get_recycling_info(user_location)
+                    if location_data.get("status") == "error":
+                        return {
+                            "status": "error",
+                            "message": f"No recycling information found for {user_location}. Please update your location."
+                        }
+                else:
+                    return {
+                        "status": "error",
+                        "message": "No location data found in memory. Please set up your location first."
+                    }
+            else:
+                # Get location data from memory
+                location_data = location_memories[0].get("session_data", {}).get("location_data", {})
+
+            # Step 3: Call Synthesis Agent to generate response
+            # Using the existing generate_recommendation() method
+            if not self.synthesis:
+                return {
+                    "status": "error",
+                    "message": "Synthesis agent not initialized"
+                }
+
+            synthesis_result = self.synthesis.generate_recommendation(
+                material_info=material_info,
+                recyclability_info=location_data
+            )
+
+            # Check if implementation is complete
+            if synthesis_result.get("status") == "not_implemented":
+                return {
+                    "status": "not_implemented",
+                    "message": "Synthesis Agent not yet implemented. The agent needs to generate recommendations based on material and location data."
+                }
+
+            # Format the response from synthesis result
+            response_message = synthesis_result.get("recommendation", "No recommendation generated")
+
+            return {
+                "status": "success",
+                "message": response_message,
+                "material_info": material_info,
+                "location_checked": location_data.get("municipality", "your area"),
+                "handled_by": ["product_intelligence", "synthesis"]
+            }
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error processing recyclability check: {str(e)}"
+            }
 
     def initialize_agents(self, product_intelligence, location, synthesis):
         """

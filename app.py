@@ -191,60 +191,22 @@ if st.session_state.user_profile["setup_complete"]:
         # Get assistant response
         with st.chat_message("assistant"):
             with st.spinner("Analyzing recyclability..."):
-                # Process request through orchestrator
-                result = st.session_state.orchestrator.process_request(prompt)
+                # Process request through orchestrator with user location
+                result = st.session_state.orchestrator.process_request(
+                    user_query=prompt,
+                    user_location=st.session_state.user_profile.get("location")
+                )
 
-                # Format response (temporary until agents are implemented)
-                if result.get("status") == "not_implemented":
-                    response = f"""I'm analyzing your item for recycling! ♻️
-
-**Your query:** {prompt}
-**Your location:** {st.session_state.user_profile['location']}
-
-The EcoScan multi-agent system will:
-1. 🔍 **Identify the material** type and plastic codes
-2. 📍 **Check local rules** for your area
-3. ✅ **Provide instructions** on how to recycle it properly
-
-*Note: Agent implementation is in progress. Soon I'll provide accurate, location-specific recycling guidance!*
-
-**Common tips while we're building:**
-- PETE #1 and HDPE #2 are widely accepted
-- Always rinse containers before recycling
-- Remove caps and labels when possible
-- When in doubt, check your local recycling program
-"""
-                else:
-                    response = result.get("message", "Something went wrong")
+                # Get response from result
+                response = result.get("message", "Something went wrong")
 
                 st.markdown(response)
 
         # Add assistant message to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
 
-        # Step 2: Ingest - Add session to memory
-        session_data = {
-            "user_query": prompt,
-            "assistant_response": response,
-            "timestamp": st.session_state.messages[-1].get("timestamp") if "timestamp" in st.session_state.messages[-1] else None,
-            "conversation_context": {
-                "message_count": len(st.session_state.messages),
-                "session_id": id(st.session_state)  # Unique session identifier
-            }
-        }
-
-        metadata = {
-            "location": st.session_state.user_profile.get("location"),
-            "zip_code": st.session_state.user_profile.get("zip_code"),
-            "query_type": "recyclability_check"
-        }
-
-        # Store in long-term memory
-        st.session_state.memory_service.add_session_to_memory(
-            session_data=session_data,
-            user_id=st.session_state.user_profile.get("location"),  # Using location as user_id for now
-            metadata=metadata
-        )
+        # NOTE: We do NOT save recyclability checks to memory
+        # Only location agent responses are saved 
 
 else:
     # Show welcome message if profile not set up
