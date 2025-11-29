@@ -247,10 +247,13 @@ class OrchestratorAgent:
                     'message': f"Unable to find recycling information for {location}. {location_data.get('error', '')}"
                 }
             
-            # TODO: save this to mem
             # Save to memory
-            # if self.memory_service:
-            #     self.memory_service.save_location_data(location_data)
+            if self.memory_service:
+                self.memory_service.add_session_to_memory(
+                    session_data=location_data,
+                    user_id="default_user",
+                    metadata={"type": "location_data", "zip_code": zip_code}
+                )
             
             # Format success message
             municipality = location_data.get('municipality', location)
@@ -348,9 +351,9 @@ I'm ready to help you check if specific items are recyclable in your area!
             
             # Step 4: Synthesize recommendation
             print("🔄 Step 4: Generating recommendation...")
-            synthesis_result = self.synthesis_agent.generate_recommendation(
-                material_info=product_data,
-                recyclability_info=location_data
+            synthesis_result = self.synthesis_agent.run(
+                product_info=product_data,
+                location_info=location_data
             )
             
             # Format response for Streamlit
@@ -420,8 +423,18 @@ Ask me about a specific item to get detailed guidance for your area!
         """Get location data from memory service."""
         if not self.memory_service:
             return None
-        
-        return self.memory_service.get_location_data()
+
+        # Search for most recent location data for this user
+        results = self.memory_service.search_memory(
+            user_id="default_user",
+            limit=1,
+            filters={"type": "location_data"}
+        )
+
+        if results:
+            return results[0].get("session_data")
+
+        return None
     
     def _extract_zip_code(self, location: str) -> Optional[str]:
         """Extract or lookup zip code from location string."""
