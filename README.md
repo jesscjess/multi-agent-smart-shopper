@@ -175,15 +175,26 @@ Agent(
 
 ### 4. Synthesis Agent
 
-**Purpose**: Generates actionable recycling instructions (Non-AI, rule-based)
+**Purpose**: AI-powered analysis combining product and location data for intelligent recommendations
 
-**Capabilities**:
-- **RIC Code Normalization**: Handles variations ("6", "#6", "PS #6")
-- **Rule Matching**: Compares material against local accepts/rejects lists
+**AI Capabilities**:
+- **Rule Matching**: Compares product RIC codes against local accepted/rejected materials
+- **Edge Case Handling**: Uses AI to analyze complex recycling scenarios
 - **Instruction Generation**: Creates step-by-step recycling guidance
-- **Response Formatting**: Outputs user-friendly markdown
+- **Response Formatting**: Outputs user-friendly markdown formatted responses
+- **Material Variation Recognition**: Handles RIC code variations ("6", "#6", "PS #6")
 
-**Key Design Decision**: Uses **deterministic Python logic** rather than AI for reliability and cost efficiency.
+**Technical Implementation**:
+```python
+Agent(
+    name="SynthesisAgent",
+    model=Gemini(model="gemini-2.5-flash-lite"),
+    instruction="Analyze product materials against local recycling regulations...",
+    tools=[]  # Pure analysis, no external tools
+)
+```
+
+**Key Design Decision**: Converted from rule-based to **AI-powered** for better handling of ambiguous recycling rules and edge cases.
 
 ---
 
@@ -193,7 +204,7 @@ Agent(
 
 **Challenge**: Google ADK uses async/await, but Streamlit is synchronous.
 
-**Solution**: Hybrid sync/async pattern with event loop management:
+**Solution**: Hybrid sync/async pattern with proper event loop management:
 
 ```python
 def run(self, product_name: str):
@@ -210,7 +221,25 @@ def run(self, product_name: str):
             return result
         finally:
             loop.close()
+
+async def _execute(self, product_name: str):
+    """Internal async execution with proper generator cleanup."""
+    # Create message
+    message = types.Content(role="user", parts=[types.Part(text=prompt)])
+
+    # Run agent and collect response
+    response_text = None
+    async for event in self.runner.run_async(...):
+        if event.is_final_response():
+            response_text = event.content.parts[0].text
+            break  # Use break (not return) to properly close generator
+
+    # Process response after generator is closed
+    if response_text:
+        return json.loads(response_text)
 ```
+
+**Critical Fix**: Using `break` instead of `return` inside async for loops ensures proper async generator cleanup, preventing "Task was destroyed but it is pending!" errors.
 
 ### 2. Session Management Pattern
 
@@ -239,21 +268,37 @@ def __init__(self):
 
 **Challenge**: Need persistent storage for location data without a database.
 
-**Solution**: File-based JSON storage with search/filter capabilities:
+**Solution**: File-based JSON storage with timestamp-sorted retrieval:
 
 ```python
 class MemoryService:
     def add_session_to_memory(self, session_data, user_id, metadata):
         """Store data with timestamps and searchable metadata."""
+        memory_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "user_id": user_id,
+            "session_data": session_data,
+            "metadata": metadata or {}
+        }
+        self.memories.append(memory_entry)
 
-    def search_memory(self, user_id, limit, filters):
-        """Retrieve data with filtering by metadata tags."""
+    def get_recent_memories(self, count, user_id):
+        """Retrieve most recent memories sorted by timestamp."""
+        sorted_memories = sorted(
+            filtered_memories,
+            key=lambda x: x.get("timestamp", ""),
+            reverse=True  # Most recent first
+        )
+        return sorted_memories[:count]
 ```
+
+**Implementation Detail**: The orchestrator uses `get_recent_memories()` instead of `search_memory()` to ensure it always retrieves the **most recent** location data, preventing issues with stale cached data.
 
 **Benefits**:
 - No external database required
 - Simple deployment
 - Easy debugging
+- Timestamp-based sorting ensures data freshness
 - Supports future multi-user scenarios
 
 ### 4. Error Handling & Validation
@@ -425,10 +470,11 @@ multi-agent-smart-shopper/
 
 1. **Agent Coordination**: Successfully orchestrated 4 agents with sequential dependencies
 2. **Async/Sync Bridge**: Resolved Streamlit-ADK compatibility with custom event loop handling
-3. **Structured Outputs**: Enforced JSON responses from LLMs through careful prompt engineering
-4. **Session Persistence**: Implemented session management to maintain conversation context
-5. **Memory Integration**: Built file-based memory system with metadata filtering
-6. **Error Resilience**: Comprehensive error handling across all agent interactions
+3. **Async Generator Cleanup**: Proper handling of async generators to prevent task leaks
+4. **Structured Outputs**: Enforced JSON responses from LLMs through careful prompt engineering
+5. **Session Persistence**: Implemented session management to maintain conversation context
+6. **Memory Integration**: Built file-based memory system with timestamp-sorted retrieval
+7. **Error Resilience**: Comprehensive error handling across all agent interactions
 
 ### Challenges Overcome
 
@@ -447,6 +493,18 @@ multi-agent-smart-shopper/
 **Challenge 4: Memory Persistence**
 - **Problem**: Location data not persisting between sessions
 - **Solution**: Integrated existing MemoryService with metadata-based search
+
+**Challenge 5: Async Generator Cleanup**
+- **Problem**: "Task was destroyed but it is pending!" errors from unclosed async generators
+- **Solution**: Use `break` instead of `return` inside async for loops to properly close generators before processing results
+
+**Challenge 6: Stale Memory Retrieval**
+- **Problem**: `search_memory()` returned first match (could be old data) instead of most recent
+- **Solution**: Use `get_recent_memories()` with timestamp sorting to always retrieve newest location data
+
+**Challenge 7: AI Synthesis Conversion**
+- **Problem**: Rule-based synthesis couldn't handle complex/ambiguous recycling scenarios
+- **Solution**: Converted Synthesis Agent to AI-powered using Gemini for intelligent analysis
 
 ---
 
