@@ -104,16 +104,22 @@ Rules:
         # Create message
         message = types.Content(role="user", parts=[types.Part(text=prompt)])
 
-        # Run agent and collect response
+        # Run agent and collect response with proper cleanup
         response_text = None
-        async for event in self.runner.run_async(
+        event_stream = self.runner.run_async(
             user_id=self.USER_ID,
             session_id=self.SESSION_ID,
             new_message=message
-        ):
-            if event.is_final_response():
-                response_text = event.content.parts[0].text
-                break  # Use break instead of return to properly close the generator
+        )
+
+        try:
+            async for event in event_stream:
+                if event.is_final_response():
+                    response_text = event.content.parts[0].text
+                    break
+        finally:
+            # Ensure generator is properly closed
+            await event_stream.aclose()
 
         # Process response after generator is closed
         if response_text:

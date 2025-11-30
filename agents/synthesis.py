@@ -52,7 +52,6 @@ Your task:
 Response format:
 {
   "is_recyclable": true/false,
-  "confidence": 0.95,
   "reason": "Explanation of why it is or isn't recyclable",
   "instructions": ["Step 1", "Step 2", "Step 3"],
   "tips": ["Helpful tip 1", "Helpful tip 2"],
@@ -62,13 +61,11 @@ Response format:
 Rules:
 - Response must start with { and end with }
 - No ``` or ```json markers
-- confidence is a number 0-1 of how confident you feel about your output
 - instructions array should be empty if not recyclable
 - tips array can contain helpful information
 - formatted_response should be a complete, user-friendly markdown response
 - Be specific about local regulations when explaining decisions
 - Consider material variations (e.g., "PET #1", "1", "#1" are all the same)
-- If data is ambiguous, set lower confidence and explain uncertainty
             """,
             tools=[]  # No external tools needed - pure analysis
         )
@@ -155,16 +152,22 @@ Rules:
         # Create message
         message = types.Content(role="user", parts=[types.Part(text=prompt)])
 
-        # Run agent and collect response
+        # Run agent and collect response with proper cleanup
         response_text = None
-        async for event in self.runner.run_async(
+        event_stream = self.runner.run_async(
             user_id=self.USER_ID,
             session_id=self.SESSION_ID,
             new_message=message
-        ):
-            if event.is_final_response():
-                response_text = event.content.parts[0].text
-                break  # Use break instead of return to properly close the generator
+        )
+
+        try:
+            async for event in event_stream:
+                if event.is_final_response():
+                    response_text = event.content.parts[0].text
+                    break
+        finally:
+            # Ensure generator is properly closed
+            await event_stream.aclose()
 
         # Process response after generator is closed
         if response_text:

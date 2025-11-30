@@ -1,4 +1,4 @@
-# Sift - Smart Recycling Assistant
+# Sift
 
 **Capstone Project: Multi-Agent AI System for Location-Specific Recycling Guidance**
 
@@ -112,12 +112,14 @@ Sift implements a **hierarchical multi-agent architecture** with clear separatio
 **Purpose**: Main coordinator that routes requests and manages agent interactions
 
 **AI Capabilities**:
+
 - **Intent Classification**: Parses natural language to determine request type
 - **Entity Extraction**: Identifies product names and plastic codes from queries
 - **Workflow Management**: Coordinates sequential agent execution
 - **Response Synthesis**: Aggregates multi-agent outputs
 
 **Technical Implementation**:
+
 ```python
 Agent(
     name="IntentOrchestratorAgent",
@@ -134,12 +136,14 @@ Agent(
 **Purpose**: Analyzes product descriptions to identify materials and recycling codes
 
 **AI Capabilities**:
+
 - **Web Search Integration**: Uses `google_search` tool for real-time data
 - **Material Classification**: Identifies plastic types (PETE #1, HDPE #2, etc.)
 - **Brand Recognition**: Distinguishes branded products from generic items
 - **Structured Output**: Returns JSON with material data and confidence scores
 
 **Technical Implementation**:
+
 ```python
 Agent(
     name="ProductIntelligenceAgent",
@@ -156,12 +160,14 @@ Agent(
 **Purpose**: Looks up local recycling regulations based on zip code
 
 **AI Capabilities**:
+
 - **Geographic Search**: Queries recycling facilities by zip code
 - **Regulation Extraction**: Identifies accepted/rejected RIC codes
 - **Authority Detection**: Finds local waste management contacts
 - **Data Structuring**: Returns standardized location data
 
 **Technical Implementation**:
+
 ```python
 Agent(
     name="LocationAgent",
@@ -178,6 +184,7 @@ Agent(
 **Purpose**: AI-powered analysis combining product and location data for intelligent recommendations
 
 **AI Capabilities**:
+
 - **Rule Matching**: Compares product RIC codes against local accepted/rejected materials
 - **Edge Case Handling**: Uses AI to analyze complex recycling scenarios
 - **Instruction Generation**: Creates step-by-step recycling guidance
@@ -185,6 +192,7 @@ Agent(
 - **Material Variation Recognition**: Handles RIC code variations ("6", "#6", "PS #6")
 
 **Technical Implementation**:
+
 ```python
 Agent(
     name="SynthesisAgent",
@@ -295,6 +303,7 @@ class MemoryService:
 **Implementation Detail**: The orchestrator uses `get_recent_memories()` instead of `search_memory()` to ensure it always retrieves the **most recent** location data, preventing issues with stale cached data.
 
 **Benefits**:
+
 - No external database required
 - Simple deployment
 - Easy debugging
@@ -304,7 +313,8 @@ class MemoryService:
 ### 4. Error Handling & Validation
 
 **JSON Response Validation**:
-```python
+
+````python
 def _parse_json_response(self, response: Any) -> Dict[str, Any]:
     """Robust JSON parsing with markdown removal."""
     try:
@@ -320,11 +330,12 @@ def _parse_json_response(self, response: Any) -> Dict[str, Any]:
         return json.loads(response_str)
     except json.JSONDecodeError:
         return {'success': False, 'error': 'Unable to parse response'}
-```
+````
 
 ### 5. Separation of Concerns
 
 **Clear Modularity**:
+
 - **Agents**: Each agent has single responsibility
 - **Orchestrator**: Only coordinates, doesn't perform domain logic
 - **Memory Service**: Handles all persistence independently
@@ -343,24 +354,28 @@ def _parse_json_response(self, response: Any) -> Dict[str, Any]:
 ### Installation Steps
 
 1. **Clone the repository**:
+
 ```bash
 git clone <repository-url>
 cd multi-agent-smart-shopper
 ```
 
 2. **Create virtual environment**:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 ```
 
 3. **Install dependencies**:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. **Configure API key**:
-Create a `.env` file in the project root:
+   Create a `.env` file in the project root:
+
 ```bash
 GOOGLE_API_KEY=your_api_key_here
 ```
@@ -386,14 +401,17 @@ The application will open at `http://localhost:8501`
 ### Example Queries
 
 **Check Specific Products**:
+
 - "Is a Coca-Cola bottle recyclable?"
 - "Can I recycle Starbucks cups?"
 
 **Ask About Plastic Codes**:
+
 - "Is PETE #1 recyclable in my area?"
 - "What about HDPE #2 containers?"
 
 **General Questions**:
+
 - "What is a RIC code?"
 - "How do I recycle properly?"
 
@@ -403,23 +421,27 @@ The application will open at `http://localhost:8501`
 # ♻️ Recycling Recommendation
 
 ## 📦 Product Information
+
 **Product:** Coca-Cola PET Bottle
 **Material:** PET #1
 
 ## 📍 Location: San Francisco, CA
 
 ## 🎯 Recommendation
+
 **Status:** ✅ Recyclable (Confidence: 95%)
 
 **Reason:** PET #1 is accepted in your local curbside recycling program.
 
 ## 📋 How to Recycle
+
 1. Clean and rinse the item to remove any food residue or contaminants
 2. Flatten or crush to save space in your recycling bin
 3. Place in your curbside recycling bin
 
 ---
-*This recommendation is based on your local recycling guidelines.*
+
+_This recommendation is based on your local recycling guidelines._
 ```
 
 ---
@@ -457,14 +479,14 @@ multi-agent-smart-shopper/
 
 ### Technology Stack
 
-| Component | Technology | Justification |
-|-----------|------------|---------------|
-| **AI Framework** | Google ADK | Official framework for multi-agent orchestration |
-| **LLM Model** | Gemini 2.5 Flash Lite | Fast, cost-effective, with tool-calling support |
-| **Frontend** | Streamlit | Python-native, rapid development, built-in chat UI |
-| **Web Search** | Google Search Tool | Real-time data for current recycling regulations |
-| **Storage** | JSON Files | Simple, portable, no database setup required |
-| **Async Runtime** | asyncio | Native Python async for ADK compatibility |
+| Component         | Technology            | Justification                                      |
+| ----------------- | --------------------- | -------------------------------------------------- |
+| **AI Framework**  | Google ADK            | Official framework for multi-agent orchestration   |
+| **LLM Model**     | Gemini 2.5 Flash Lite | Fast, cost-effective, with tool-calling support    |
+| **Frontend**      | Streamlit             | Python-native, rapid development, built-in chat UI |
+| **Web Search**    | Google Search Tool    | Real-time data for current recycling regulations   |
+| **Storage**       | JSON Files            | Simple, portable, no database setup required       |
+| **Async Runtime** | asyncio               | Native Python async for ADK compatibility          |
 
 ### Key Technical Achievements
 
@@ -479,30 +501,37 @@ multi-agent-smart-shopper/
 ### Challenges Overcome
 
 **Challenge 1: JSON Output Consistency**
+
 - **Problem**: LLMs returned markdown-wrapped JSON
 - **Solution**: Explicit instruction formatting + post-processing to strip markdown
 
 **Challenge 2: Session Management**
+
 - **Problem**: Sessions being created multiple times causing conflicts
 - **Solution**: Moved session creation to `__init__` with `asyncio.run()`
 
 **Challenge 3: Event Loop Conflicts**
+
 - **Problem**: Streamlit's event loop interfered with `asyncio.run()`
 - **Solution**: Custom wrapper with new event loop creation on RuntimeError
 
 **Challenge 4: Memory Persistence**
+
 - **Problem**: Location data not persisting between sessions
 - **Solution**: Integrated existing MemoryService with metadata-based search
 
 **Challenge 5: Async Generator Cleanup**
+
 - **Problem**: "Task was destroyed but it is pending!" errors from unclosed async generators
 - **Solution**: Use `break` instead of `return` inside async for loops to properly close generators before processing results
 
 **Challenge 6: Stale Memory Retrieval**
+
 - **Problem**: `search_memory()` returned first match (could be old data) instead of most recent
 - **Solution**: Use `get_recent_memories()` with timestamp sorting to always retrieve newest location data
 
 **Challenge 7: AI Synthesis Conversion**
+
 - **Problem**: Rule-based synthesis couldn't handle complex/ambiguous recycling scenarios
 - **Solution**: Converted Synthesis Agent to AI-powered using Gemini for intelligent analysis
 
@@ -533,16 +562,19 @@ multi-agent-smart-shopper/
 ## Why This Matters
 
 ### Environmental Impact
+
 - **Waste Reduction**: Proper recycling diverts materials from landfills
 - **Contamination Prevention**: Incorrect recycling ruins entire batches
 - **Resource Conservation**: Recycled materials reduce need for virgin resources
 
 ### Educational Value
+
 - **Informed Consumers**: Understanding RIC codes empowers better purchasing decisions
 - **Local Awareness**: Users learn about their specific recycling programs
 - **Behavior Change**: Real-time feedback encourages proper waste management
 
 ### Technical Innovation
+
 - **Multi-Agent AI**: Demonstrates practical orchestration of specialized AI agents
 - **Real-Time Data**: Combines AI reasoning with live internet search
 - **User-Centered Design**: Solves real-world problem with accessible interface
@@ -552,12 +584,14 @@ multi-agent-smart-shopper/
 ## Capstone Evaluation Criteria
 
 ### Code Quality ✅
+
 - Clean, modular architecture with clear separation of concerns
 - Comprehensive error handling and validation
 - Type hints and documentation throughout
 - Consistent coding standards and naming conventions
 
 ### Technical Design ✅
+
 - Hierarchical multi-agent architecture
 - Asynchronous programming patterns
 - Session and state management
@@ -565,6 +599,7 @@ multi-agent-smart-shopper/
 - Scalable and maintainable structure
 
 ### AI Integration ✅
+
 - **Meaningful Agent Use**: Each agent has distinct, necessary purpose
 - **Tool Integration**: Web search for real-time data
 - **Prompt Engineering**: Structured JSON outputs

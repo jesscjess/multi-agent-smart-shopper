@@ -1,4 +1,4 @@
-"""Sift - Smart Recycling Assistant Chat Interface"""
+"""Sift - Chat Interface"""
 
 import streamlit as st
 from agents import (
@@ -10,10 +10,14 @@ from agents import (
 # from services.memory_service import MemoryService  # Updated import path
 from config.settings import settings
 from memory_service import MemoryService
+import warnings
+
+# Suppress async cleanup warnings on exit
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*Event loop is closed.*")
 
 # Page configuration
 st.set_page_config(
-    page_title="Sift - Smart Recycling Assistant",
+    page_title="Sift",
     page_icon="♻️",
     layout="centered"
 )
@@ -49,7 +53,7 @@ if "orchestrator" not in st.session_state:
 
 # App header
 st.title("♻️ Sift")
-st.caption("Smart Recycling Assistant - Know what's actually recyclable in your area")
+st.caption("Know what's actually recyclable in your area")
 
 # User profile setup (if not completed)
 if not st.session_state.user_profile["setup_complete"]:
@@ -60,8 +64,8 @@ if not st.session_state.user_profile["setup_complete"]:
         st.write("We need your location to provide accurate recycling information for your area.")
 
         location_input = st.text_input(
-            "Enter your city or zip code",
-            placeholder="e.g., San Francisco, CA or 94102"
+            "Enter your zip code",
+            placeholder="e.g. 94102"
         )
 
         submitted = st.form_submit_button("Save Location")
